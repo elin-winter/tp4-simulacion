@@ -26,16 +26,15 @@ SIM_TIME = int(config["GENERAL"]["SIM_TIME"])
 SEED = int(config["GENERAL"]["SEED"])
 
 CAPACIDAD_BATERIA_KWH = 50
-POTENCIA_CR_KW = 150
+POTENCIA_CR_KW = 50
 POTENCIA_CSR_KW = 22
 
-ESCENARIOS = ["ESCENARIO_REAL"]
+ESCENARIOS = ["ESCENARIO_REAL", "ESCENARIO_EFICIENTE", "ESCENARIO_NO_EFICIENTE"]
 NOMBRES_ESCENARIOS = {
     "ESCENARIO_REAL": "Real",
+    "ESCENARIO_EFICIENTE": "Eficiente",
+    "ESCENARIO_NO_EFICIENTE": "No eficiente"
 }
-bat_10 = 0
-bat_40 = 0
-bat_90 = 0
 
 # -------------------------
 # ESTRUCTURAS
@@ -85,24 +84,14 @@ def generar_tiempo_carga(tipo, b_ini, b_fin):
     return tiempo_carga(b_ini, b_fin, POTENCIA_CSR_KW) * 60
 
 def tolera_espera(bateria, espera):
-    global bat_10, bat_40, bat_90
     if espera == 0:
         return True
     elif bateria <= 10:
-        status = random.random() < 0.9
-        if (not status):
-            bat_10 += 1
-        return status
-    elif bateria <= 40 and espera > 60:
-        status = random.random() < 0.4
-        if (not status):
-            bat_40 += 1
-        return status
-    elif espera > 30:
-        status =  random.random() < 0.2
-        if (not status):
-            bat_90 += 1
-        return status
+        return random.random() < 0.9
+    elif bateria <= 40 and espera > 30:
+        return random.random() < 0.4
+    elif espera > 10:
+        return random.random() < 0.2
     else:
         return True
 
@@ -114,8 +103,8 @@ def correr_simulacion(escenario):
     random.seed(SEED)
     np.random.seed(SEED)
 
-    CCR = int(config[escenario]["CCR"])
-    CCSR = int(config[escenario]["CCSR"])
+    CCR = int(config[escenario]["CCR"]) 
+    CCSR = config[escenario].getint("CCSR", fallback=1) 
     PROB_CR = float(config[escenario]["PROB_CR"])
 
     reloj = 0
@@ -131,43 +120,51 @@ def correr_simulacion(escenario):
     tiempos_espera = {TipoCargador.CR: [], TipoCargador.CSR: []}
     tiempos_sistema = {TipoCargador.CR: [], TipoCargador.CSR: []}
 
-    while eventos and reloj < SIM_TIME:
+    while eventos:
+        # Tomar el siguiente evento de la lista (cola de prioridad)
         reloj, evento, data = heapq.heappop(eventos)
-        print("Eventos :", eventos)
 
         if evento == "llegada":
+            if reloj > SIM_TIME:
+                continue
+             
+            # Generar próximo arribo y agregarlo a la lista de eventos
             ia = generar_intervalo_arribo()
             heapq.heappush(eventos, (reloj + ia, "llegada", None)) 
+            
 
+            # Generar estado inicial y final de batería, y tipo de cargador
             b_ini = generar_bateria_inicial()
             b_fin = generar_bateria_final(b_ini)
             tipo_cargador = elegir_tipo(PROB_CR)
 
             llegadas_por_tipo[tipo_cargador] += 1
 
+            # Seleccionar lista de cargadores según tipo
             lista = cargadores_CR if tipo_cargador == TipoCargador.CR else cargadores_CSR
 
+            
+            # Buscar el cargador que antes se desocupa
             min_ocupado = min(c.ocupado_hasta for c in lista)
             candidatos = [c for c in lista if c.ocupado_hasta == min_ocupado]
             cargador = random.choice(candidatos)
             indice = lista.index(cargador)
 
-            print ("cargador ocupado: ", cargador.ocupado_hasta)
-            print ("reloj : ", reloj)
-            
+            # Calcular tiempo de espera (si el cargador está ocupado)
             espera = max(0, cargador.ocupado_hasta - reloj)
-
-            print (" Espera: ", espera)
-            print("--------------------\n")
+            print("Espera: ", espera, "Cargador: ", tipo_cargador)
+            # Verificar si el usuario tolera la espera
             if not tolera_espera(b_ini, espera):
                 arrepentidos_por_tipo[tipo_cargador] += 1
                 continue
             
-            
+            # Calcular tiempo de servicio y programar evento de fin de carga
             t_serv = generar_tiempo_carga(tipo_cargador, b_ini, b_fin)
+
             inicio = max(reloj, cargador.ocupado_hasta)
             fin = inicio + t_serv
 
+            # Acumular tiempo ocioso si corresponde
             if cargador.ocupado_hasta < reloj:
                 cargador.tiempo_ocioso += reloj - cargador.ocupado_hasta
 
@@ -180,7 +177,7 @@ def correr_simulacion(escenario):
                 "llegada": reloj
             }))
 
-
+        # Evento de fin de carga: actualizar estadísticas
         elif evento == "fin":
             tipo_cargador = data["tipo"]
             atendidos[tipo_cargador] += 1
@@ -197,7 +194,6 @@ def correr_simulacion(escenario):
         te = tiempos_espera[tipo]
         ts = tiempos_sistema[tipo]
         n = len(cargadores)
-        ociosidad_total = sum(c.tiempo_ocioso for c in cargadores)
         return {
             "llegadas": llegadas,
             "atendidos": atendidos[tipo],
@@ -205,8 +201,7 @@ def correr_simulacion(escenario):
             "pct_arrepentidos": (arrep / llegadas * 100) if llegadas > 0 else 0,
             "tiempo_espera_prom": np.mean(te) if te else 0,
             "tiempo_sistema_prom": np.mean(ts) if ts else 0,
-            "ociosidad_prom_pct": ociosidad_total / (n * SIM_TIME) * 100,
-            "ociosidad_por_cargador": [c.tiempo_ocioso / SIM_TIME * 100 for c in cargadores],
+            "ociosidad_por_cargador": [c.tiempo_ocioso / (max(c.ocupado_hasta, SIM_TIME)) * 100 for c in cargadores],
             "n_cargadores": n,
         }
 
@@ -237,14 +232,14 @@ if __name__ == "__main__":
             s = r[tipo_k]
             print(f"    [{label}] Llegadas:{s['llegadas']} | Atendidos:{s['atendidos']} | "
                   f"Arrep:{s['arrepentidos']} ({s['pct_arrepentidos']:.1f}%) | "
-                  f"EspProm:{s['tiempo_espera_prom']:.1f}min | Ocioso:{s['ociosidad_prom_pct']:.1f}%")
+                  f"EspProm:{s['tiempo_espera_prom']:.1f}min \n")
+    
+            for i, val in enumerate(s["ociosidad_por_cargador"]):
+                print(f"  Cargador {label}-{i}: Ocioso {val:.1f}%")
 
     txt_path = "C:/Users/alesc/Documents/Github/tp4-simulacion/output/reporte_simulacion.txt"
     xlsx_path = "C:/Users/alesc/Documents/Github/tp4-simulacion/output/analisis_sensibilidad.xlsx"
 
     generar_txt(resultados, txt_path, SIM_TIME, SEED)
     generar_excel(resultados, xlsx_path, SIM_TIME, SEED)
-    print(f"Arrepentimiento 10: {bat_10}\n")
-    print(f"Arrepentimiento 40: {bat_40}\n")
-    print(f"Arrepentimiento 90: {bat_90}\n")
     print("\n✓ Todos los archivos generados exitosamente.")

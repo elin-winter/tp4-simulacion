@@ -19,6 +19,4 @@ def generar_bateria_final(b_ini):
 
 for i in range(1, 10):
     bat = generar_bateria_inicial()
-    print (bat)
-    print(generar_bateria_final(bat))
-
+    print (f"Soc inicial: {bat};    "  f"Soc final: {generar_bateria_final(bat)}")

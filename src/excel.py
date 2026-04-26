@@ -18,7 +18,7 @@ BLANCO = "FFFFFF"
 ESCENARIO_COLORES = {
     "Real": ("2E75B6", "DEEAF1"),
     "Eficiente": ("375623", "E2EFDA"),
-    "Ineficiente": ("C00000", "FCE4D6"),
+    "No eficiente": ("C00000", "FCE4D6"),
 }
 
 def estilar_celda(ws, celda, valor=None, bold=False, fondo=None, fuente_color="000000",
@@ -60,7 +60,7 @@ def generar_excel(resultados, path, sim_time, seed):
     headers = ["Métrica", "Unidad",
                "Real (CR)", "Real (CSR)",
                "Eficiente (CR)", "Eficiente (CSR)",
-               "Ineficiente (CR)", "Ineficiente (CSR)"]
+               "No eficiente (CR)", "No eficiente (CSR)"]
     cols_w = [28, 10, 13, 13, 13, 13, 13, 13]
     for i, (h, w) in enumerate(zip(headers, cols_w)):
         col = get_column_letter(i + 1)
@@ -77,7 +77,7 @@ def generar_excel(resultados, path, sim_time, seed):
         ("% Arrepentidos", "%", "pct_arrepentidos", "0.0%"),
         ("Tiempo Prom. Espera", "min", "tiempo_espera_prom", "0.00"),
         ("Tiempo Prom. Sistema", "min", "tiempo_sistema_prom", "0.00"),
-        ("Ociosidad Promedio", "%", "ociosidad_prom_pct", "0.0%"),
+        ("Ociosidad Prom. por Cargador", "%", "ociosidad_por_cargador", "0.0%"),  # ← nuevo
     ]
 
     fila_inicio_datos = 5
@@ -94,8 +94,8 @@ def generar_excel(resultados, path, sim_time, seed):
                 val = r[tipo_k][key]
                 if key == "pct_arrepentidos":
                     val = val / 100
-                elif key == "ociosidad_prom_pct":
-                    val = val / 100
+                elif key == "ociosidad_por_cargador":
+                    val = (sum(val) / len(val) / 100) if len(val) > 0 else 0
                 cell = f"{get_column_letter(col)}{row}"
                 estilar_celda(ws, cell, val, fondo=fondo_row, borde=True, tamaño=10,
                               formato=fmt if fmt else "General")
@@ -106,7 +106,7 @@ def generar_excel(resultados, path, sim_time, seed):
     escenario_col_ranges = [
         (3, 4, "Real"),
         (5, 6, "Eficiente"),
-        (7, 8, "Ineficiente"),
+        (7, 8, "No eficiente"),
     ]
     for col_s, col_e, nombre in escenario_col_ranges:
         color_h, color_l = ESCENARIO_COLORES[nombre]
@@ -158,7 +158,7 @@ def generar_excel(resultados, path, sim_time, seed):
                 ("% Arrepentidos", s["pct_arrepentidos"] / 100, "0.0%"),
                 ("Tiempo prom. espera (min)", s["tiempo_espera_prom"], "0.00"),
                 ("Tiempo prom. sistema (min)", s["tiempo_sistema_prom"], "0.00"),
-                ("Ociosidad promedio", s["ociosidad_prom_pct"] / 100, "0.0%"),
+                #("Ociosidad promedio", s["ociosidad_prom_pct"] / 100, "0.0%"),
             ]
             for j, (met, val, fmt) in enumerate(filas_det):
                 fondo_f = GRIS if j % 2 == 0 else BLANCO
@@ -202,7 +202,7 @@ def generar_excel(resultados, path, sim_time, seed):
         ("% Arrepentidos", "pct_arrepentidos", "0.0%"),
         ("Tiempo Espera Prom (min)", "tiempo_espera_prom", "0.00"),
         ("Tiempo Sistema Prom (min)", "tiempo_sistema_prom", "0.00"),
-        ("Ociosidad Promedio (%)", "ociosidad_prom_pct", "0.0%"),
+        #("Ociosidad Promedio por Cargador (%)", "ociosidad_prom_pct", "0.0%"),
     ]
 
     fila3 = 3
@@ -273,4 +273,3 @@ def generar_excel(resultados, path, sim_time, seed):
         ws4.add_chart(chart, chart_positions[idx])
 
     wb.save(path)
-    print(f"[OK] Excel generado: {path}")
