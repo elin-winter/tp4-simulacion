@@ -202,7 +202,7 @@ def generar_excel(resultados, path, sim_time, seed):
         ("% Arrepentidos", "pct_arrepentidos", "0.0%"),
         ("Tiempo Espera Prom (min)", "tiempo_espera_prom", "0.00"),
         ("Tiempo Sistema Prom (min)", "tiempo_sistema_prom", "0.00"),
-        #("Ociosidad Promedio por Cargador (%)", "ociosidad_prom_pct", "0.0%"),
+        ("Ociosidad Prom por Cargador (%)", "ociosidad_por_cargador", "0.0%"),
     ]
 
     fila3 = 3
@@ -234,7 +234,9 @@ def generar_excel(resultados, path, sim_time, seed):
                           borde=True, tamaño=10)
             for j, t in enumerate(tipos):
                 val = r[t][ds_key]
-                if ds_fmt == "0.0%":
+                if ds_key == "ociosidad_por_cargador":
+                    val = (sum(val) / len(val) / 100) if len(val) > 0 else 0
+                elif ds_fmt == "0.0%":
                     val = val / 100
                 col_l = get_column_letter(j + 2)
                 estilar_celda(ws3, f"{col_l}{fila3}", val, fondo=BLANCO, borde=True,

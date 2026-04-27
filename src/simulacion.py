@@ -1,16 +1,11 @@
 import random
 import heapq
-import numpy as np
 import configparser
-from scipy.stats import truncnorm, beta
 from enum import Enum
-from openpyxl import Workbook
-from openpyxl.styles import (Font, PatternFill, Alignment, Border, Side,
-                              GradientFill)
-from openpyxl.utils import get_column_letter
-from openpyxl.chart import BarChart, Reference
-from openpyxl.chart.series import DataPoint
-import datetime
+from pathlib import Path
+
+import numpy as np
+from scipy.stats import truncnorm, beta
 
 from excel import generar_excel
 from texto import generar_txt
@@ -237,8 +232,10 @@ if __name__ == "__main__":
             for i, val in enumerate(s["ociosidad_por_cargador"]):
                 print(f"  Cargador {label}-{i}: Ocioso {val:.1f}%")
 
-    txt_path = "C:/Users/alesc/Documents/Github/tp4-simulacion/output/reporte_simulacion.txt"
-    xlsx_path = "C:/Users/alesc/Documents/Github/tp4-simulacion/output/analisis_sensibilidad.xlsx"
+    output_dir = Path(__file__).resolve().parent.parent / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    txt_path = output_dir / "reporte_simulacion.txt"
+    xlsx_path = output_dir / "analisis_sensibilidad.xlsx"
 
     generar_txt(resultados, txt_path, SIM_TIME, SEED)
     generar_excel(resultados, xlsx_path, SIM_TIME, SEED)
