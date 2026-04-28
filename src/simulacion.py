@@ -95,7 +95,7 @@ def generar_tiempo_carga(tipo, b_ini, b_fin):
 def tolera_espera(bateria, espera):
     if espera == 0:
         return True
-    elif bateria <= 10:
+    elif bateria <= 10 and espera > 60:
         return random.random() < 0.9
     elif bateria <= 40 and espera > 30:
         return random.random() < 0.4
@@ -271,7 +271,7 @@ def calcular_eficiencia(metricas):
         W = m["W"]
         O = m["O"]
         W_ratio = (W / W_max) if W_max != 0 else 0
-        E = 1 - (0.5 * O + 0.5 * W_ratio)
+        E = 1 - (0.5 * O / 100 + 0.5 * W_ratio)
         eficiencias.append(E)
     return eficiencias
 
