@@ -85,7 +85,7 @@ def tolera_espera(bateria, espera):
         return random.random() < 0.9
     elif bateria <= 40 and espera > 30:
         return random.random() < 0.4
-    elif espera > 10:
+    elif bateria > 40 and espera > 10:
         return random.random() < 0.2
     else:
         return True
