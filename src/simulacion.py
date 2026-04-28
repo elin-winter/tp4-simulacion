@@ -18,7 +18,8 @@ config = configparser.ConfigParser(inline_comment_prefixes=(';', '#'))
 config.read("simulacion.conf")
 
 SIM_TIME = int(config["GENERAL"]["SIM_TIME"])
-SEED = int(config["GENERAL"]["SEED"])
+SEED_RAW = config["GENERAL"].get("SEED", fallback="").strip()
+SEED = int(SEED_RAW) if SEED_RAW else None
 
 CAPACIDAD_BATERIA_KWH = 50
 POTENCIA_CR_KW = 50
@@ -95,8 +96,9 @@ def tolera_espera(bateria, espera):
 # -------------------------
 
 def correr_simulacion(escenario):
-    random.seed(SEED)
-    np.random.seed(SEED)
+    if SEED is not None:
+        random.seed(SEED)
+        np.random.seed(SEED)
 
     CCR = int(config[escenario]["CCR"]) 
     CCSR = config[escenario].getint("CCSR", fallback=1) 

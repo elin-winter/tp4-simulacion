@@ -1,6 +1,6 @@
 =======================================================
   REPORTE DE SIMULACIÓN — ESTACIÓN DE CARGA VE
-  Generado: 2026-04-27 23:30:38
+  Generado: 2026-04-27 22:19:08
   Duración simulación: 1440 min | Seed: None
 =======================================================
 
@@ -11,73 +11,72 @@
 #######################################################
 
   --- CARGADORES RÁPIDOS ---
-  Total llegadas:           36
-  Total atendidos:          30
-  Arrepentidos:             6 (16.7%)
-  Tiempo promedio espera:   16.64 min
-  Tiempo promedio sistema:  53.21 min
+  Total llegadas:           38
+  Total atendidos:          32
+  Arrepentidos:             6 (15.8%)
+  Tiempo promedio espera:   15.24 min
+  Tiempo promedio sistema:  53.36 min
   Ociosidad por cargador:
-    CR[0]: 23.8%
+    CR[0]: 19.7%
 
   --- CARGADORES SEMI-RÁPIDOS ---
-  Total llegadas:           10
-  Total atendidos:          9
-  Arrepentidos:             1 (10.0%)
-  Tiempo promedio espera:   3.73 min
-  Tiempo promedio sistema:  78.24 min
+  Total llegadas:           7
+  Total atendidos:          6
+  Arrepentidos:             1 (14.3%)
+  Tiempo promedio espera:   4.78 min
+  Tiempo promedio sistema:  77.90 min
   Ociosidad por cargador:
-    CSR[0]: 55.5%
+    CSR[0]: 69.5%
 
 #######################################################
   ESCENARIO: EFICIENTE
-  Cargadores Rápidos (CR): 1 | Semi-Rápidos (CSR): 2
-  Prob. uso CR: 74%
+  Cargadores Rápidos (CR): 1 | Semi-Rápidos (CSR): 0
+  Prob. uso CR: 100%
 #######################################################
 
   --- CARGADORES RÁPIDOS ---
-  Total llegadas:           32
-  Total atendidos:          27
-  Arrepentidos:             5 (15.6%)
-  Tiempo promedio espera:   5.28 min
-  Tiempo promedio sistema:  39.75 min
+  Total llegadas:           47
+  Total atendidos:          38
+  Arrepentidos:             9 (19.1%)
+  Tiempo promedio espera:   16.59 min
+  Tiempo promedio sistema:  51.02 min
   Ociosidad por cargador:
-    CR[0]: 36.1%
+    CR[0]: 10.1%
 
   --- CARGADORES SEMI-RÁPIDOS ---
-  Total llegadas:           6
-  Total atendidos:          6
+  Total llegadas:           0
+  Total atendidos:          0
   Arrepentidos:             0 (0.0%)
   Tiempo promedio espera:   0.00 min
-  Tiempo promedio sistema:  82.54 min
+  Tiempo promedio sistema:  0.00 min
   Ociosidad por cargador:
-    CSR[0]: 81.2%
-    CSR[1]: 84.4%
 
 #######################################################
   ESCENARIO: NO EFICIENTE
-  Cargadores Rápidos (CR): 2 | Semi-Rápidos (CSR): 2
+  Cargadores Rápidos (CR): 3 | Semi-Rápidos (CSR): 2
   Prob. uso CR: 74%
 #######################################################
 
   --- CARGADORES RÁPIDOS ---
-  Total llegadas:           29
-  Total atendidos:          29
+  Total llegadas:           36
+  Total atendidos:          36
   Arrepentidos:             0 (0.0%)
-  Tiempo promedio espera:   0.00 min
-  Tiempo promedio sistema:  32.16 min
+  Tiempo promedio espera:   0.21 min
+  Tiempo promedio sistema:  35.53 min
   Ociosidad por cargador:
-    CR[0]: 70.1%
-    CR[1]: 65.5%
+    CR[0]: 69.4%
+    CR[1]: 72.3%
+    CR[2]: 69.9%
 
   --- CARGADORES SEMI-RÁPIDOS ---
-  Total llegadas:           9
+  Total llegadas:           8
   Total atendidos:          8
-  Arrepentidos:             1 (11.1%)
-  Tiempo promedio espera:   4.56 min
-  Tiempo promedio sistema:  88.58 min
+  Arrepentidos:             0 (0.0%)
+  Tiempo promedio espera:   0.00 min
+  Tiempo promedio sistema:  90.18 min
   Ociosidad por cargador:
-    CSR[0]: 77.0%
-    CSR[1]: 76.3%
+    CSR[0]: 71.8%
+    CSR[1]: 78.1%
 
 =======================================================
   FIN DEL REPORTE
