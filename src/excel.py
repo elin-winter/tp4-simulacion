@@ -265,72 +265,81 @@ def _hoja_kpis(wb, resultados):
         italic=True, size=9, color=BLANCO, bg=AZUL_MED)
     set_row_height(ws, 2, 16)
 
-    kpi_keys = [
-        ("Abandono total",  "pct_arrepentidos",      "0.0%", True),
-        ("Espera prom. CR", "tiempo_espera_prom",     "0.00", False),
-        ("Ociosidad CR",    "ociosidad_por_cargador", "0.0%", True),
-        ("Atendidos CR",    "atendidos",              "0.0",  False),
+    # KPIs a mostrar, agrupados por tipo
+    kpis_cr = [
+        ("Abandono total", "pct_arrepentidos", "0.0%"),
+        ("Espera prom. CR", "tiempo_espera_prom", "0.00"),
+        ("Ociosidad CR", "ociosidad_por_cargador", "0.0%"),
+        ("Atendidos CR", "atendidos", "0.0"),
+    ]
+    kpis_csr = [
+        ("Abandono total CSR", "pct_arrepentidos", "0.0%"),
+        ("Espera prom. CSR", "tiempo_espera_prom", "0.00"),
+        ("Ociosidad CSR", "ociosidad_por_cargador", "0.0%"),
+        ("Atendidos CSR", "atendidos", "0.0"),
     ]
 
-    # Determinar mejor eficiencia (mayor = mejor)
     mejor_score = max(r["eficiencia_global"] for r in resultados)
 
-    start_row = 4
-    for esc_idx, r in enumerate(resultados):
-        base_col = 1 + esc_idx * 2
+    # Encabezados de escenarios (sin merge para evitar error de MergedCell)
+    cel(ws, "A1", "", bg=AZUL_OSCURO)
+    cel(ws, "A2", "", bg=AZUL_OSCURO)
+    cel(ws, "A3", "", bg=AZUL_OSCURO)
+    cel(ws, "A4", "", bg=AZUL_OSCURO)
+    for idx, r in enumerate(resultados):
+        col = 2 + idx
         es_mejor = abs(r["eficiencia_global"] - mejor_score) < 1e-9
-        bg_header = AZUL_CLARO if not es_mejor else "117A65"  # verde si es el mejor
+        bg_header = AZUL_CLARO if not es_mejor else "117A65"
+        cel(ws, f"{get_column_letter(col)}4", r["nombre"] + (" ★" if es_mejor else ""), bold=True, size=12, color=BLANCO, bg=bg_header, border=True)
 
-        ws.merge_cells(
-            start_row=start_row, start_column=base_col,
-            end_row=start_row,   end_column=base_col + 1)
-        ref = f"{get_column_letter(base_col)}{start_row}"
-        label_esc = r["nombre"] + (" ★" if es_mejor else "")
-        cel(ws, ref, label_esc, bold=True, size=12,
-            color=BLANCO, bg=bg_header)
-        set_row_height(ws, start_row, 26)
-
-        for k_idx, (klabel, kkey, kfmt, is_pct) in enumerate(kpi_keys):
-            row = start_row + 1 + k_idx * 3
-
-            ws.merge_cells(start_row=row, start_column=base_col,
-                           end_row=row, end_column=base_col + 1)
-            lref = f"{get_column_letter(base_col)}{row}"
-            cel(ws, lref, klabel, size=9, color="555555",
-                bg=GRIS_CLARO, align="left")
-            set_row_height(ws, row, 16)
-
-            ws.merge_cells(start_row=row+1, start_column=base_col,
-                           end_row=row+1, end_column=base_col + 1)
-            vref = f"{get_column_letter(base_col)}{row+1}"
-            cr = r["CR"]
+    # KPIs CR
+    fila = 5
+    for label, kkey, kfmt in kpis_cr:
+        cel(ws, f"A{fila}", label, bold=True, size=10, color=BLANCO, bg=AZUL_OSCURO, border=True)
+        for idx, r in enumerate(resultados):
+            col = 2 + idx
+            datos = r["CR"]
             if kkey == "pct_arrepentidos":
-                val = cr[kkey] / 100
+                val = datos[kkey] / 100
+                txt_color = (ROJO_BAD if val > 0.20 else (NARANJA_WARN if val > 0.10 else VERDE_OK))
             elif kkey == "ociosidad_por_cargador":
-                oc = cr[kkey]
+                oc = datos[kkey]
                 val = (sum(oc) / len(oc) / 100) if oc else 0
+                txt_color = AZUL_CLARO
             else:
-                val = cr.get(kkey, 0)
+                val = datos.get(kkey, 0)
+                txt_color = AZUL_CLARO
+            cel(ws, f"{get_column_letter(col)}{fila}", val, bold=True, size=11, color=txt_color, bg=BLANCO, border=True, fmt=kfmt)
+        fila += 2
 
-            txt_color = AZUL_CLARO
+    # KPIs CSR
+    for label, kkey, kfmt in kpis_csr:
+        cel(ws, f"A{fila}", label, bold=True, size=10, color=BLANCO, bg=AZUL_OSCURO, border=True)
+        for idx, r in enumerate(resultados):
+            col = 2 + idx
+            datos = r["CSR"]
             if kkey == "pct_arrepentidos":
-                txt_color = (ROJO_BAD if val > 0.20
-                             else (NARANJA_WARN if val > 0.10 else VERDE_OK))
+                val = datos[kkey] / 100
+                txt_color = (ROJO_BAD if val > 0.20 else (NARANJA_WARN if val > 0.10 else VERDE_OK))
+            elif kkey == "ociosidad_por_cargador":
+                oc = datos[kkey]
+                val = (sum(oc) / len(oc) / 100) if oc else 0
+                txt_color = AZUL_CLARO
+            else:
+                val = datos.get(kkey, 0)
+                txt_color = AZUL_CLARO
+            cel(ws, f"{get_column_letter(col)}{fila}", val, bold=True, size=11, color=txt_color, bg=BLANCO, border=True, fmt=kfmt)
+        fila += 2
 
-            cel(ws, vref, val, bold=True, size=18, color=txt_color,
-                bg=BLANCO, fmt=kfmt)
-            set_row_height(ws, row+1, 30)
+    # Separadores visuales y anchos
+    for f in range(5, fila, 2):
+        for c in range(1, 2+len(resultados)+1):
+            ws.cell(row=f+1, column=c).fill = PatternFill("solid", fgColor=AZUL_SUAVE)
 
-            set_row_height(ws, row+2, 5)
-            for c in range(base_col, base_col + 2):
-                ws.cell(row=row+2, column=c).fill = PatternFill(
-                    "solid", fgColor=AZUL_SUAVE)
-
-    set_col_widths(ws, {
-        "A": 14, "B": 14,
-        "C": 14, "D": 14,
-        "E": 14, "F": 14,
-    })
+    ancho_cols = {"A": 18}
+    for i in range(len(resultados)):
+        ancho_cols[get_column_letter(2+i)] = 14
+    set_col_widths(ws, ancho_cols)
 
 
 # ── Hoja 3: Insights ──────────────────────────────────────────────────────────
@@ -405,8 +414,13 @@ def _hoja_graficos(wb, resultados):
         bold=True, size=14, color=BLANCO, bg=AZUL_OSCURO)
     set_row_height(ws, 1, 32)
 
-    headers_g = ["Escenario", "% Abandono CR", "Espera CR (min)",
-                 "Ociosidad CR (%)", "Atendidos CR"]
+    headers_g = [
+        "Escenario",
+        "% Abandono CR", "% Abandono CSR",
+        "Espera CR (min)", "Espera CSR (min)",
+        "Ociosidad CR (%)", "Ociosidad CSR (%)",
+        "Atendidos CR", "Atendidos CSR"
+    ]
     for i, h in enumerate(headers_g):
         ref = f"{get_column_letter(i+1)}3"
         cel(ws, ref, h, bold=True, size=9, color=BLANCO, bg=AZUL_MED, border=True)
@@ -415,60 +429,70 @@ def _hoja_graficos(wb, resultados):
     for idx, r in enumerate(resultados):
         row = 4 + idx
         cr = r["CR"]
-        oc = cr["ociosidad_por_cargador"]
-        ocio = (sum(oc) / len(oc) / 100) if oc else 0
+        csr = r["CSR"]
+        oc_cr = cr["ociosidad_por_cargador"]
+        oc_csr = csr["ociosidad_por_cargador"]
+        ocio_cr = (sum(oc_cr) / len(oc_cr) / 100) if oc_cr else 0
+        ocio_csr = (sum(oc_csr) / len(oc_csr) / 100) if oc_csr else 0
         vals = [
             r["nombre"],
-            cr["pct_arrepentidos"] / 100,
-            cr["tiempo_espera_prom"],
-            ocio,
-            cr["atendidos"],
+            cr["pct_arrepentidos"] / 100, csr["pct_arrepentidos"] / 100,
+            cr["tiempo_espera_prom"], csr["tiempo_espera_prom"],
+            ocio_cr, ocio_csr,
+            cr["atendidos"], csr["atendidos"]
         ]
         bg = GRIS_CLARO if idx % 2 == 0 else BLANCO
         for i, v in enumerate(vals):
             ref = f"{get_column_letter(i+1)}{row}"
-            fmt_map = [None, "0.0%", "0.00", "0.0%", "0.0"]
+            fmt_map = [None, "0.0%", "0.0%", "0.00", "0.00", "0.0%", "0.0%", "0.0", "0.0"]
             cel(ws, ref, v, size=10, bg=bg, border=True, fmt=fmt_map[i])
         set_row_height(ws, row, 18)
 
     n = len(resultados)
 
+    # Gráficos comparativos CR vs CSR
+    # 1. % Abandono
     ch1 = BarChart()
     ch1.type = "col"
-    ch1.title = "% Abandono por Escenario (CR)"
+    ch1.title = "% Abandono por Escenario (CR vs CSR)"
     ch1.style = 10; ch1.grouping = "clustered"
-    ch1.width = 16; ch1.height = 10
+    ch1.width = 18; ch1.height = 10
     ch1.y_axis.numFmt = "0%"; ch1.y_axis.title = "Tasa de abandono"
-    data1 = Reference(ws, min_col=2, min_row=3, max_row=3 + n)
+    data1 = Reference(ws, min_col=2, min_row=3, max_col=3, max_row=3 + n)
     cats1 = Reference(ws, min_col=1, min_row=4, max_row=3 + n)
     ch1.add_data(data1, titles_from_data=True); ch1.set_categories(cats1)
-    ch1.series[0].graphicalProperties.solidFill = AZUL_CLARO
-    ws.add_chart(ch1, "G3")
+    ch1.series[0].graphicalProperties.solidFill = AZUL_CLARO  # CR
+    ch1.series[1].graphicalProperties.solidFill = "117A65"   # CSR
+    ws.add_chart(ch1, "J3")
 
+    # 2. Espera promedio
     ch2 = BarChart()
     ch2.type = "col"
-    ch2.title = "Espera Promedio CR (min)"
-    ch2.style = 10; ch2.width = 16; ch2.height = 10
+    ch2.title = "Espera Promedio (min) CR vs CSR"
+    ch2.style = 10; ch2.width = 18; ch2.height = 10
     ch2.y_axis.title = "Minutos"
-    data2 = Reference(ws, min_col=3, min_row=3, max_row=3 + n)
+    data2 = Reference(ws, min_col=4, min_row=3, max_col=5, max_row=3 + n)
     cats2 = Reference(ws, min_col=1, min_row=4, max_row=3 + n)
     ch2.add_data(data2, titles_from_data=True); ch2.set_categories(cats2)
-    ch2.series[0].graphicalProperties.solidFill = "2E86C1"
-    ws.add_chart(ch2, "G22")
+    ch2.series[0].graphicalProperties.solidFill = AZUL_CLARO
+    ch2.series[1].graphicalProperties.solidFill = "117A65"
+    ws.add_chart(ch2, "J22")
 
+    # 3. Ociosidad
     ch3 = BarChart()
     ch3.type = "col"
-    ch3.title = "Ociosidad Promedio CR (%)"
-    ch3.style = 10; ch3.width = 16; ch3.height = 10
+    ch3.title = "Ociosidad Promedio (%) CR vs CSR"
+    ch3.style = 10; ch3.width = 18; ch3.height = 10
     ch3.y_axis.numFmt = "0%"; ch3.y_axis.title = "Ociosidad"
-    data3 = Reference(ws, min_col=4, min_row=3, max_row=3 + n)
+    data3 = Reference(ws, min_col=6, min_row=3, max_col=7, max_row=3 + n)
     cats3 = Reference(ws, min_col=1, min_row=4, max_row=3 + n)
     ch3.add_data(data3, titles_from_data=True); ch3.set_categories(cats3)
-    ch3.series[0].graphicalProperties.solidFill = "117A65"
-    ws.add_chart(ch3, "G41")
+    ch3.series[0].graphicalProperties.solidFill = AZUL_CLARO
+    ch3.series[1].graphicalProperties.solidFill = "117A65"
+    ws.add_chart(ch3, "J41")
 
     set_col_widths(ws, {
-        "A": 18, "B": 14, "C": 14, "D": 14, "E": 14, "F": 2
+        "A": 18, "B": 14, "C": 14, "D": 14, "E": 14, "F": 14, "G": 14, "H": 14, "I": 2
     })
 
 
