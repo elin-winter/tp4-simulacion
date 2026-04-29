@@ -263,13 +263,12 @@ def calcular_metricas_globales(r):
     return {"W": W, "O": O, "A": A, "S": S}
 
 
-def calcular_eficiencia(metricas):
-    W_max = max(m["W"] for m in metricas) if metricas else 0
-
+def calcular_eficiencia(metricas, w_max_escenarios):
     eficiencias = []
-    for m in metricas:
+    for i, m in enumerate(metricas):
         W = m["W"]
         O = m["O"]
+        W_max = w_max_escenarios[i]  # W máximo de ese escenario
         W_ratio = (W / W_max) if W_max != 0 else 0
         E = 1 - (0.5 * O / 100 + 0.5 * W_ratio)
         eficiencias.append(E)
@@ -283,6 +282,7 @@ if __name__ == "__main__":
     print(f"\nSimulación con {N_REPLICAS} réplicas por escenario\n")
 
     resultados = []
+    w_max_escenarios = []
 
     for esc in ESCENARIOS:
         print(f"Corriendo escenario: {NOMBRES_ESCENARIOS[esc]}")
@@ -293,9 +293,14 @@ if __name__ == "__main__":
 
         r = promediar_resultados(replicas)
         resultados.append(r)
+        
+        # Calcular W máximo observado en este escenario
+        w_values = [calcular_metricas_globales(replica)["W"] for replica in replicas]
+        w_max = max(w_values) if w_values else 0
+        w_max_escenarios.append(w_max)
 
     metricas = [calcular_metricas_globales(r) for r in resultados]
-    eficiencias = calcular_eficiencia(metricas)
+    eficiencias = calcular_eficiencia(metricas, w_max_escenarios)
 
     for i, r in enumerate(resultados):
         r["eficiencia_global"] = eficiencias[i]
